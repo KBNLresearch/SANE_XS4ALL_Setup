@@ -76,7 +76,7 @@ try {
     $GithubBaseUrl = Get-EnvVar `
         -Name "SOLRWAYBACK_GITHUB_BASE_URL" `
         -Default $Default_GithubBaseUrl
-    $InstallDir = Get-EnvVar`
+    $InstallDir = Get-EnvVar `
         -Name "SOLRWAYBACK_INSTALL_DIR" `
         -Default $Default_InstallDir
     $UserHome = Get-EnvVar `
