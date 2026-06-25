@@ -1,0 +1,30 @@
+name: Test SolrWayback Installation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [ main ]
+
+jobs:
+  install-solrwayback:
+    if: github.event.pull_request.draft == false
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run install_solrwayback.ps1
+        shell: pwsh
+        run: |
+          Write-Host "Starting SolrWayback installation script"
+          $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+          if (-not $isAdmin) {
+            Write-Host "Elevating to administrator rights"
+            Start-Process pwsh -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','./install_solrwayback.ps1' -Verb RunAs -Wait
+            exit
+          }
+          Write-Host "Running with administrator rights"
+          ./install_solrwayback.ps1
