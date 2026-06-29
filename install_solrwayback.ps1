@@ -4,7 +4,7 @@
 
 # Must be run as Administrator
 
-# Expected env vars for installation:
+# Default installation settings
 $Default_Version = "5.4.2"
 $Default_GithubBaseUrl = "https://github.com/netarchivesuite/solrwayback/releases/download"
 $Default_InstallDir = "C:\Program Files\solrwayback"
@@ -58,7 +58,7 @@ function Get-EnvVar {
     return $value
 }
 
-function Ensure-Directory {
+function Initialize-Directory {
     param([Parameter(Mandatory = $true)][string]$Path)
 
     if (!(Test-Path $Path)) {
@@ -125,9 +125,9 @@ try {
     Write-Log "User home: $UserHome"
     Write-Log "Java home: $JavaHome"
 
-    Ensure-Directory $TempDir
-    Ensure-Directory $InstallDir
-    Ensure-Directory $UserHome
+    Initialize-Directory $TempDir
+    Initialize-Directory $InstallDir
+    Initialize-Directory $UserHome
 
     Write-Log "Downloading SolrWayback bundle"
     curl.exe `
