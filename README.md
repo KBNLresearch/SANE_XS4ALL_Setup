@@ -6,7 +6,14 @@ Use this repo to track and update the set of accessible software and packages fo
 
 ## SolrWayback
 
-The main tool for working with WARC files is [SolrWayback](https://github.com/netarchivesuite/solrwayback). This tool is installed in the environment using the included [powershell script](install_solrwayback.ps1). This step will also install Java in the process, but does not currently include the chrome/chromium installation for page previews.
+The main tool for working with WARC files is [SolrWayback](https://github.com/netarchivesuite/solrwayback). This tool is installed in the environment using the included [powershell script](install_solrwayback.ps1).
+
+The script will install (see/edit top lines of [script](install_solrwayback.ps1) for version numbers of each):
+    - SolrWayback
+    - Java 11
+    - Tomcat 9
+    - Solr 9
+    - Chrome (latest)
 
 ## Python packages
 
