@@ -82,7 +82,7 @@ try {
     Initialize-Directory $TempDir
 
     # Install Java11 if not found
-    Write-Log "Installing Java 11 if not found"
+    Write-Log "---- Starting Java 11 installation"
 
     $JavaHome = Get-EnvVar `
         -Name "JAVA_HOME" `
@@ -105,11 +105,11 @@ try {
             throw "Java 11 path does not exist after installation: $JavaHome"
         }
     } else {
-        Write-Log "Java 11 found at $JavaHome"
+        Write-Log "Java 11 already present  at $JavaHome"
     }
 
     # Install SolrWayback
-    Write-Log "Starting SolrWayback installation"
+    Write-Log "---- Starting SolrWayback installation"
 
     $SolrwaybackVersion = Get-EnvVar `
         -Name "SOLRWAYBACK_VERSION" `
@@ -121,6 +121,7 @@ try {
         -Name "SOLRWAYBACK_USER_HOME" `
         -Default $Default_UserHome
 
+    Write-Log "Install SolrWayback (version: $SolrwaybackVersion)"
     $SolrWaybackInstallDir = Join-Path $InstallDir "solrwayback"
     $VersionToken = if ($SolrwaybackVersion.StartsWith("v")) { $SolrwaybackVersion.Substring(1) } else { $SolrwaybackVersion }
     $VersionedPackageName = "solrwayback_package_$VersionToken"
@@ -174,6 +175,8 @@ try {
     Write-Log "SolrWayback $SolrWaybackVersion installed to $SolrWaybackInstallDir"
 
     # Install Tomcat 9
+    Write-Log "---- Starting Apache Tomcat installation"
+
     $TomcatVersion = Get-EnvVar `
         -Name "TOMCAT_VERSION" `
         -Default $Default_TomcatVersion
@@ -208,6 +211,7 @@ try {
     Write-Log "Tomcat 9 installed to $TomcatInstallDir"
 
     # Install Solr 9
+    Write-Log "---- Starting Apache Solr installation"
     $SolrVersion = Get-EnvVar `
         -Name "SOLR_VERSION" `
         -Default $Default_SolrVersion
@@ -239,7 +243,7 @@ try {
     Write-Log "Solr $SolrVersion installed to $SolrInstallDir"
 
     # Install Google Chrome
-    Write-Log "Install Google Chrome"
+    Write-Log "---- Starting Google Chrome installation"
     $ChromeInstallerUrl = "https://dl.google.com/chrome/install/googlechromestandaloneenterprise64.msi"
     $ChromeInstallDir = Join-Path $TempDir "GoogleChrome"
 
