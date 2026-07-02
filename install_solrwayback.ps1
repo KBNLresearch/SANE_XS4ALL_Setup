@@ -70,6 +70,10 @@ function Initialize-Directory {
 try {
     Assert-Admin
 
+    Write-Log "Checking whether tar is available (needed for solr installation)"
+    Get-Command tar
+    Write-Log "tar is available"
+
     $InstallDir = Get-EnvVar `
         -Name "INSTALL_DIR" `
         -Default $Default_InstallDir
@@ -82,7 +86,7 @@ try {
 
     $JavaHome = Get-EnvVar `
         -Name "JAVA_HOME" `
-        -Default Join-Path $InstallDir "Java\jdk-11"
+        -Default (Join-Path $InstallDir "Java\jdk-11")
 
     if (!(Test-Path $JavaHome)) {
         $msi = Join-Path $env:TEMP "temurin11.msi"
@@ -108,7 +112,7 @@ try {
     Write-Log "Starting SolrWayback installation"
 
     $SolrwaybackVersion = Get-EnvVar `
-        -Name "SOLRWAYBACK_VERSION"`
+        -Name "SOLRWAYBACK_VERSION" `
         -Default $Default_SolrWaybackVersion
     $GithubBaseUrl = Get-EnvVar `
         -Name "SOLRWAYBACK_GITHUB_BASE_URL" `
@@ -175,7 +179,7 @@ try {
         -Default $Default_TomcatVersion
     $TomcatInstallDir = Get-EnvVar `
         -Name "TOMCAT_INSTALL_DIR" `
-        -Default Join-Path $InstallDir "tomcat9"
+        -Default (Join-Path $InstallDir "tomcat9")
     $TomcatArchiveName = "apache-tomcat-$TomcatVersion.zip"
     $TomcatArchiveUrl = "https://dlcdn.apache.org/tomcat/tomcat-9/v$TomcatVersion/bin/$TomcatArchiveName"
     $TomcatZipPath = Join-Path $TempDir $TomcatArchiveName
@@ -209,7 +213,7 @@ try {
         -Default $Default_SolrVersion
     $SolrInstallDir = Get-EnvVar `
         -Name "SOLR_INSTALL_DIR" `
-        -Default Join-Path $InstallDir "solr9"
+        -Default (Join-Path $InstallDir "solr9")
     $SolrArchiveName = "solr-$SolrVersion-src.tgz"
     $SolrArchiveUrl = "https://dlcdn.apache.org/solr/solr/$SolrVersion/$SolrArchiveName"
     $SolrZipPath = Join-Path $TempDir $SolrArchiveName
@@ -221,7 +225,8 @@ try {
         throw "Solr archive download failed: $SolrZipPath"
     }
 
-    Expand-Archive -Path $SolrZipPath -DestinationPath $InstallDir -Force
+    Write-Log "Extract Solr archive"
+    tar -xzf $SolrZipPath -C $InstallDir
 
     $SolrExtractedDir = Join-Path $InstallDir "solr-$SolrVersion"
     if (Test-Path $SolrInstallDir) {
