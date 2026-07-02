@@ -9,9 +9,11 @@ $Default_SolrWaybackVersion = "5.4.2"
 $Default_GithubBaseUrl = "https://github.com/netarchivesuite/solrwayback/releases/download"
 $Default_InstallDir = "C:\Program Files\"
 $Default_UserHome = Join-Path $Default_InstallDir "user\home"
+$Default_TomcatVersion = "9.0.119"
+$Default_SolrVersion = "9.10.1"
 
 $ErrorActionPreference = "Stop"
-$LogFile = "C:\logs\install-solrwayback.log"
+$LogFile = "C:\logs\install-solrwayback-with-requirements.log"
 
 function Write-Log {
     param([string]$Message)
@@ -165,6 +167,71 @@ try {
         Copy-Item -Path $sourceFile -Destination $UserHome -Force
         Write-Log "Copied $fileName to $UserHome"
     }
+    Write-Log "SolrWayback $SolrWaybackVersion installed to $SolrWaybackInstallDir"
+
+    # Install Tomcat 9
+    $TomcatVersion = Get-EnvVar `
+        -Name "TOMCAT_VERSION" `
+        -Default $Default_TomcatVersion
+    $TomcatInstallDir = Get-EnvVar `
+        -Name "TOMCAT_INSTALL_DIR" `
+        -Default Join-Path $InstallDir "tomcat9"
+    $TomcatArchiveName = "apache-tomcat-$TomcatVersion.zip"
+    $TomcatArchiveUrl = "https://dlcdn.apache.org/tomcat/tomcat-9/v$TomcatVersion/bin/$TomcatArchiveName"
+    $TomcatZipPath = Join-Path $TempDir $TomcatArchiveName
+
+    Write-Log "Installing Apache Tomcat (version: $TomcatVersion)"
+    Invoke-WebRequest -Uri $TomcatArchiveUrl -OutFile $TomcatZipPath
+
+    if (!(Test-Path $TomcatZipPath)) {
+        throw "Tomcat archive download failed: $TomcatZipPath"
+    }
+
+    Expand-Archive `
+        -Path $TomcatZipPath `
+        -DestinationPath $TomcatInstallDir `
+        -Force
+
+    $TomcatExtractedDir = Join-Path $TomcatInstallDir "apache-tomcat-$TomcatVersion"
+    if (Test-Path $TomcatInstallDir) {
+        Remove-Item -Path $TomcatInstallDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    if (Test-Path $TomcatExtractedDir) {
+        Rename-Item -Path $TomcatExtractedDir -NewName "tomcat9"
+    }
+
+    Write-Log "Tomcat 9 installed to $TomcatInstallDir"
+
+    # Install Solr 9
+    $SolrVersion = Get-EnvVar `
+        -Name "SOLR_VERSION" `
+        -Default $Default_SolrVersion
+    $SolrInstallDir = Get-EnvVar `
+        -Name "SOLR_INSTALL_DIR" `
+        -Default Join-Path $InstallDir "solr9"
+    $SolrArchiveName = "solr-$SolrVersion-src.tgz"
+    $SolrArchiveUrl = "https://dlcdn.apache.org/solr/solr/$SolrVersion/$SolrArchiveName"
+    $SolrZipPath = Join-Path $TempDir $SolrArchiveName
+
+    Write-Log "Installing Apache Solr $SolrVersion"
+    Invoke-WebRequest -Uri $SolrArchiveUrl -OutFile $SolrZipPath
+
+    if (!(Test-Path $SolrZipPath)) {
+        throw "Solr archive download failed: $SolrZipPath"
+    }
+
+    Expand-Archive -Path $SolrZipPath -DestinationPath $InstallDir -Force
+
+    $SolrExtractedDir = Join-Path $InstallDir "solr-$SolrVersion"
+    if (Test-Path $SolrInstallDir) {
+        Remove-Item -Path $SolrInstallDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    if (Test-Path $SolrExtractedDir) {
+        Rename-Item -Path $SolrExtractedDir -NewName "solr9"
+    }
+    Write-Log "Solr $SolrVersion installed to $SolrInstallDir"
 
     Write-Log "SolrWayback installation complete"
     Write-Log "If screenshot previews are required, verify chrome.command and screenshot.temp.imagedir in $UserHome\solrwayback.properties"
