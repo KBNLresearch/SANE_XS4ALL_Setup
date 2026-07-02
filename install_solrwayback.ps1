@@ -4,15 +4,16 @@
 
 # Must be run as Administrator
 
-# Expected env vars for installation:
-$Default_Version = "5.4.2"
+# Default installation settings
+$Default_SolrWaybackVersion = "5.4.2"
 $Default_GithubBaseUrl = "https://github.com/netarchivesuite/solrwayback/releases/download"
-$Default_InstallDir = "C:\Program Files\solrwayback"
+$Default_InstallDir = "C:\Program Files\"
 $Default_UserHome = Join-Path $Default_InstallDir "user\home"
-$Default_JavaHome = "C:\Program Files\Java\jdk-11"
+$Default_TomcatVersion = "9.0.119"
+$Default_SolrVersion = "9.10.1"
 
 $ErrorActionPreference = "Stop"
-$LogFile = "C:\logs\install-solrwayback.log"
+$LogFile = "C:\logs\install-solrwayback-with-requirements.log"
 
 function Write-Log {
     param([string]$Message)
@@ -58,7 +59,7 @@ function Get-EnvVar {
     return $value
 }
 
-function Ensure-Directory {
+function Initialize-Directory {
     param([Parameter(Mandatory = $true)][string]$Path)
 
     if (!(Test-Path $Path)) {
@@ -69,12 +70,23 @@ function Ensure-Directory {
 try {
     Assert-Admin
 
-    Write-Log "Checking for Java 11 installation"
+    Write-Log "Checking whether tar is available (needed for solr installation)"
+    Get-Command tar
+    Write-Log "tar is available"
+
+    $InstallDir = Get-EnvVar `
+        -Name "INSTALL_DIR" `
+        -Default $Default_InstallDir
+
+    $TempDir = Join-Path $InstallDir "Temp"
+    Initialize-Directory $TempDir
 
     # Install Java11 if not found
+    Write-Log "Installing Java 11 if not found"
+
     $JavaHome = Get-EnvVar `
         -Name "JAVA_HOME" `
-        -Default $Default_JavaHome
+        -Default (Join-Path $InstallDir "Java\jdk-11")
 
     if (!(Test-Path $JavaHome)) {
         $msi = Join-Path $env:TEMP "temurin11.msi"
@@ -83,51 +95,47 @@ try {
         Write-Log "Java 11 not detected; downloading Java 11 MSI from $javaInstallerUrl"
         Invoke-WebRequest -Uri $javaInstallerUrl -OutFile $msi
 
-        Write-Log "Installing Java 11 to $Default_JavaHome"
-        Start-Process -FilePath 'msiexec.exe' -Wait -ArgumentList "/i", "`"$msi`"", "INSTALLDIR=`"$Default_JavaHome`"", "/qn"
+        Write-Log "Installing Java 11 to $JavaHome"
+        Start-Process -FilePath 'msiexec.exe' -Wait -ArgumentList "/i", "`"$msi`"", "INSTALLDIR=`"$JavaHome`"", "/qn"
 
-        if (Test-Path $Default_JavaHome) {
-            $JavaHome = $Default_JavaHome
+        if (Test-Path $JavaHome) {
+            $JavaHome = $JavaHome
             Write-Log "Java 11 installed to $JavaHome"
         } else {
-            throw "Java 11 path does not exist after installation: $Default_JavaHome"
+            throw "Java 11 path does not exist after installation: $JavaHome"
         }
     } else {
         Write-Log "Java 11 found at $JavaHome"
     }
 
+    # Install SolrWayback
     Write-Log "Starting SolrWayback installation"
 
     $SolrwaybackVersion = Get-EnvVar `
-        -Name "SOLRWAYBACK_VERSION"`
-        -Default $Default_Version
+        -Name "SOLRWAYBACK_VERSION" `
+        -Default $Default_SolrWaybackVersion
     $GithubBaseUrl = Get-EnvVar `
         -Name "SOLRWAYBACK_GITHUB_BASE_URL" `
         -Default $Default_GithubBaseUrl
-    $InstallDir = Get-EnvVar `
-        -Name "SOLRWAYBACK_INSTALL_DIR" `
-        -Default $Default_InstallDir
     $UserHome = Get-EnvVar `
         -Name "SOLRWAYBACK_USER_HOME" `
         -Default $Default_UserHome
 
+    $SolrWaybackInstallDir = Join-Path $InstallDir "solrwayback"
     $VersionToken = if ($SolrwaybackVersion.StartsWith("v")) { $SolrwaybackVersion.Substring(1) } else { $SolrwaybackVersion }
     $VersionedPackageName = "solrwayback_package_$VersionToken"
     $AssetName = "$VersionedPackageName.zip"
     $DownloadUrl = "$GithubBaseUrl/$VersionToken/$AssetName"
 
-    $TempDir = "C:\Temp\solrwayback"
     $ZipPath = Join-Path $TempDir $AssetName
 
     Write-Log "Version: $VersionToken"
     Write-Log "Download URL: $DownloadUrl"
-    Write-Log "Install dir: $InstallDir"
+    Write-Log "SolrWayback Install dir: $SolrWaybackInstallDir"
     Write-Log "User home: $UserHome"
-    Write-Log "Java home: $JavaHome"
 
-    Ensure-Directory $TempDir
-    Ensure-Directory $InstallDir
-    Ensure-Directory $UserHome
+    Initialize-Directory $SolrWaybackInstallDir
+    Initialize-Directory $UserHome
 
     Write-Log "Downloading SolrWayback bundle"
     curl.exe `
@@ -140,10 +148,10 @@ try {
         throw "Download failed with exit code $LASTEXITCODE"
     }
 
-    Write-Log "Extracting SolrWayback bundle to $InstallDir"
+    Write-Log "Extracting SolrWayback bundle to $SolrWaybackInstallDir"
     Expand-Archive `
         -Path $ZipPath `
-        -DestinationPath $InstallDir `
+        -DestinationPath $SolrWaybackInstallDir `
         -Force
 
     $FilesToCopy = @(
@@ -151,7 +159,7 @@ try {
     "solrwaybackweb.properties"
     )
 
-    $PackageLocation = Join-Path $InstallDir $VersionedPackageName
+    $PackageLocation = Join-Path $SolrWaybackInstallDir $VersionedPackageName
     $PropertiesPath = Join-Path $PackageLocation "properties"
 
     foreach ($fileName in $FilesToCopy) {
@@ -163,10 +171,82 @@ try {
         Copy-Item -Path $sourceFile -Destination $UserHome -Force
         Write-Log "Copied $fileName to $UserHome"
     }
+    Write-Log "SolrWayback $SolrWaybackVersion installed to $SolrWaybackInstallDir"
+
+    # Install Tomcat 9
+    $TomcatVersion = Get-EnvVar `
+        -Name "TOMCAT_VERSION" `
+        -Default $Default_TomcatVersion
+    $TomcatInstallDir = Get-EnvVar `
+        -Name "TOMCAT_INSTALL_DIR" `
+        -Default (Join-Path $InstallDir "tomcat9")
+    $TomcatArchiveName = "apache-tomcat-$TomcatVersion.zip"
+    $TomcatArchiveUrl = "https://dlcdn.apache.org/tomcat/tomcat-9/v$TomcatVersion/bin/$TomcatArchiveName"
+    $TomcatZipPath = Join-Path $TempDir $TomcatArchiveName
+
+    Write-Log "Installing Apache Tomcat (version: $TomcatVersion)"
+    Invoke-WebRequest -Uri $TomcatArchiveUrl -OutFile $TomcatZipPath
+
+    if (!(Test-Path $TomcatZipPath)) {
+        throw "Tomcat archive download failed: $TomcatZipPath"
+    }
+
+    Expand-Archive `
+        -Path $TomcatZipPath `
+        -DestinationPath $TomcatInstallDir `
+        -Force
+
+    $TomcatExtractedDir = Join-Path $TomcatInstallDir "apache-tomcat-$TomcatVersion"
+    if (Test-Path $TomcatInstallDir) {
+        Remove-Item -Path $TomcatInstallDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    if (Test-Path $TomcatExtractedDir) {
+        Rename-Item -Path $TomcatExtractedDir -NewName "tomcat9"
+    }
+
+    Write-Log "Tomcat 9 installed to $TomcatInstallDir"
+
+    # Install Solr 9
+    $SolrVersion = Get-EnvVar `
+        -Name "SOLR_VERSION" `
+        -Default $Default_SolrVersion
+    $SolrInstallDir = Get-EnvVar `
+        -Name "SOLR_INSTALL_DIR" `
+        -Default (Join-Path $InstallDir "solr9")
+    $SolrArchiveName = "solr-$SolrVersion-src.tgz"
+    $SolrArchiveUrl = "https://dlcdn.apache.org/solr/solr/$SolrVersion/$SolrArchiveName"
+    $SolrZipPath = Join-Path $TempDir $SolrArchiveName
+
+    Write-Log "Installing Apache Solr $SolrVersion"
+    Invoke-WebRequest -Uri $SolrArchiveUrl -OutFile $SolrZipPath
+
+    if (!(Test-Path $SolrZipPath)) {
+        throw "Solr archive download failed: $SolrZipPath"
+    }
+
+    Write-Log "Extract Solr archive"
+    tar -xzf $SolrZipPath -C $InstallDir
+
+    $SolrExtractedDir = Join-Path $InstallDir "solr-$SolrVersion"
+    if (Test-Path $SolrInstallDir) {
+        Remove-Item -Path $SolrInstallDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    if (Test-Path $SolrExtractedDir) {
+        Rename-Item -Path $SolrExtractedDir -NewName "solr9"
+    }
+    Write-Log "Solr $SolrVersion installed to $SolrInstallDir"
 
     Write-Log "SolrWayback installation complete"
     Write-Log "If screenshot previews are required, verify chrome.command and screenshot.temp.imagedir in $UserHome\solrwayback.properties"
     Write-Log "Users may need to sign out/in before proceeding."
+
+    if (Test-Path $TempDir) {
+        Remove-Item -Path $TempDir -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Log "Removed temporary download directory $TempDir"
+    }
+
 }
 catch {
     Write-Log "ERROR: $($_.Exception.Message)"
