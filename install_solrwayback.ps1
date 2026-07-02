@@ -5,11 +5,10 @@
 # Must be run as Administrator
 
 # Default installation settings
-$Default_Version = "5.4.2"
+$Default_SolrWaybackVersion = "5.4.2"
 $Default_GithubBaseUrl = "https://github.com/netarchivesuite/solrwayback/releases/download"
-$Default_InstallDir = "C:\Program Files\solrwayback"
+$Default_InstallDir = "C:\Program Files\"
 $Default_UserHome = Join-Path $Default_InstallDir "user\home"
-$Default_JavaHome = "C:\Program Files\Java\jdk-11"
 
 $ErrorActionPreference = "Stop"
 $LogFile = "C:\logs\install-solrwayback.log"
@@ -69,12 +68,19 @@ function Initialize-Directory {
 try {
     Assert-Admin
 
-    Write-Log "Checking for Java 11 installation"
+    $InstallDir = Get-EnvVar `
+        -Name "INSTALL_DIR" `
+        -Default $Default_InstallDir
+
+    $TempDir = Join-Path $InstallDir "Temp"
+    Initialize-Directory $TempDir
 
     # Install Java11 if not found
+    Write-Log "Installing Java 11 if not found"
+
     $JavaHome = Get-EnvVar `
         -Name "JAVA_HOME" `
-        -Default $Default_JavaHome
+        -Default Join-Path $InstallDir "Java\jdk-11"
 
     if (!(Test-Path $JavaHome)) {
         $msi = Join-Path $env:TEMP "temurin11.msi"
@@ -83,50 +89,46 @@ try {
         Write-Log "Java 11 not detected; downloading Java 11 MSI from $javaInstallerUrl"
         Invoke-WebRequest -Uri $javaInstallerUrl -OutFile $msi
 
-        Write-Log "Installing Java 11 to $Default_JavaHome"
-        Start-Process -FilePath 'msiexec.exe' -Wait -ArgumentList "/i", "`"$msi`"", "INSTALLDIR=`"$Default_JavaHome`"", "/qn"
+        Write-Log "Installing Java 11 to $JavaHome"
+        Start-Process -FilePath 'msiexec.exe' -Wait -ArgumentList "/i", "`"$msi`"", "INSTALLDIR=`"$JavaHome`"", "/qn"
 
-        if (Test-Path $Default_JavaHome) {
-            $JavaHome = $Default_JavaHome
+        if (Test-Path $JavaHome) {
+            $JavaHome = $JavaHome
             Write-Log "Java 11 installed to $JavaHome"
         } else {
-            throw "Java 11 path does not exist after installation: $Default_JavaHome"
+            throw "Java 11 path does not exist after installation: $JavaHome"
         }
     } else {
         Write-Log "Java 11 found at $JavaHome"
     }
 
+    # Install SolrWayback
     Write-Log "Starting SolrWayback installation"
 
     $SolrwaybackVersion = Get-EnvVar `
         -Name "SOLRWAYBACK_VERSION"`
-        -Default $Default_Version
+        -Default $Default_SolrWaybackVersion
     $GithubBaseUrl = Get-EnvVar `
         -Name "SOLRWAYBACK_GITHUB_BASE_URL" `
         -Default $Default_GithubBaseUrl
-    $InstallDir = Get-EnvVar `
-        -Name "SOLRWAYBACK_INSTALL_DIR" `
-        -Default $Default_InstallDir
     $UserHome = Get-EnvVar `
         -Name "SOLRWAYBACK_USER_HOME" `
         -Default $Default_UserHome
 
+    $SolrWaybackInstallDir = Join-Path $InstallDir "solrwayback"
     $VersionToken = if ($SolrwaybackVersion.StartsWith("v")) { $SolrwaybackVersion.Substring(1) } else { $SolrwaybackVersion }
     $VersionedPackageName = "solrwayback_package_$VersionToken"
     $AssetName = "$VersionedPackageName.zip"
     $DownloadUrl = "$GithubBaseUrl/$VersionToken/$AssetName"
 
-    $TempDir = "C:\Temp\solrwayback"
     $ZipPath = Join-Path $TempDir $AssetName
 
     Write-Log "Version: $VersionToken"
     Write-Log "Download URL: $DownloadUrl"
-    Write-Log "Install dir: $InstallDir"
+    Write-Log "SolrWayback Install dir: $SolrWaybackInstallDir"
     Write-Log "User home: $UserHome"
-    Write-Log "Java home: $JavaHome"
 
-    Initialize-Directory $TempDir
-    Initialize-Directory $InstallDir
+    Initialize-Directory $SolrWaybackInstallDir
     Initialize-Directory $UserHome
 
     Write-Log "Downloading SolrWayback bundle"
@@ -140,10 +142,10 @@ try {
         throw "Download failed with exit code $LASTEXITCODE"
     }
 
-    Write-Log "Extracting SolrWayback bundle to $InstallDir"
+    Write-Log "Extracting SolrWayback bundle to $SolrWaybackInstallDir"
     Expand-Archive `
         -Path $ZipPath `
-        -DestinationPath $InstallDir `
+        -DestinationPath $SolrWaybackInstallDir `
         -Force
 
     $FilesToCopy = @(
@@ -151,7 +153,7 @@ try {
     "solrwaybackweb.properties"
     )
 
-    $PackageLocation = Join-Path $InstallDir $VersionedPackageName
+    $PackageLocation = Join-Path $SolrWaybackInstallDir $VersionedPackageName
     $PropertiesPath = Join-Path $PackageLocation "properties"
 
     foreach ($fileName in $FilesToCopy) {
@@ -167,6 +169,12 @@ try {
     Write-Log "SolrWayback installation complete"
     Write-Log "If screenshot previews are required, verify chrome.command and screenshot.temp.imagedir in $UserHome\solrwayback.properties"
     Write-Log "Users may need to sign out/in before proceeding."
+
+    if (Test-Path $TempDir) {
+        Remove-Item -Path $TempDir -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Log "Removed temporary download directory $TempDir"
+    }
+
 }
 catch {
     Write-Log "ERROR: $($_.Exception.Message)"
