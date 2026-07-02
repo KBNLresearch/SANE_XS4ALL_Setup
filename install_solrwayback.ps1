@@ -184,7 +184,7 @@ try {
     $TomcatArchiveUrl = "https://dlcdn.apache.org/tomcat/tomcat-9/v$TomcatVersion/bin/$TomcatArchiveName"
     $TomcatZipPath = Join-Path $TempDir $TomcatArchiveName
 
-    Write-Log "Installing Apache Tomcat (version: $TomcatVersion)"
+    Write-Log "Install Apache Tomcat (version: $TomcatVersion)"
     Invoke-WebRequest -Uri $TomcatArchiveUrl -OutFile $TomcatZipPath
 
     if (!(Test-Path $TomcatZipPath)) {
@@ -218,7 +218,7 @@ try {
     $SolrArchiveUrl = "https://dlcdn.apache.org/solr/solr/$SolrVersion/$SolrArchiveName"
     $SolrZipPath = Join-Path $TempDir $SolrArchiveName
 
-    Write-Log "Installing Apache Solr $SolrVersion"
+    Write-Log "Install Apache Solr (version: $SolrVersion)"
     Invoke-WebRequest -Uri $SolrArchiveUrl -OutFile $SolrZipPath
 
     if (!(Test-Path $SolrZipPath)) {
@@ -238,7 +238,24 @@ try {
     }
     Write-Log "Solr $SolrVersion installed to $SolrInstallDir"
 
-    Write-Log "SolrWayback installation complete"
+    # Install Google Chrome
+    Write-Log "Install Google Chrome"
+    $ChromeInstallerUrl = "https://dl.google.com/chrome/install/googlechromestandaloneenterprise64.msi"
+    $ChromeInstallDir = Join-Path $TempDir "GoogleChrome"
+
+    Write-Log "Downloading Google Chrome from $ChromeInstallerUrl"
+    Invoke-WebRequest -Uri $ChromeInstallerUrl -OutFile $ChromeInstallDir
+
+    if (!(Test-Path $ChromeInstallDir)) {
+        throw "Chrome installer download failed: $ChromeInstallDir"
+    }
+
+    Write-Log "Installing Google Chrome"
+    Start-Process -FilePath 'msiexec.exe' -Wait -ArgumentList "/i", "`"$ChromeInstallDir`"", "/qn", "/norestart"
+
+    Write-Log "Google Chrome installed"
+
+    Write-Log "SolrWayback and requirements installation complete"
     Write-Log "If screenshot previews are required, verify chrome.command and screenshot.temp.imagedir in $UserHome\solrwayback.properties"
     Write-Log "Users may need to sign out/in before proceeding."
 
