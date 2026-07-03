@@ -7,13 +7,13 @@
 # Default installation settings
 $Default_SolrWaybackVersion = "5.4.2"
 $Default_GithubBaseUrl = "https://github.com/netarchivesuite/solrwayback/releases/download"
-$Default_InstallDir = "C:\Program Files\"
-$Default_UserHome = Join-Path $Default_InstallDir "user\home"
+$Default_InstallDir = "C:\\Program Files\\"
+$Default_UserHome = Join-Path $Default_InstallDir "user\\home"
 $Default_TomcatVersion = "9.0.119"
 $Default_SolrVersion = "9.10.1"
 
 $ErrorActionPreference = "Stop"
-$LogFile = "C:\logs\install-solrwayback-with-requirements.log"
+$LogFile = "C:\\logs\\install-solrwayback-with-requirements.log"
 
 function Write-Log {
     param([string]$Message)
@@ -86,7 +86,7 @@ try {
 
     $JavaHome = Get-EnvVar `
         -Name "JAVA_HOME" `
-        -Default (Join-Path $InstallDir "Java\jdk-11")
+        -Default (Join-Path $InstallDir "Java\\jdk-11")
 
     if (!(Test-Path $JavaHome)) {
         $msi = Join-Path $env:TEMP "temurin11.msi"
@@ -260,7 +260,7 @@ try {
     Write-Log "Google Chrome installed"
 
     Write-Log "SolrWayback and requirements installation complete"
-    Write-Log "If screenshot previews are required, verify chrome.command and screenshot.temp.imagedir in $UserHome\solrwayback.properties"
+    Write-Log "If screenshot previews are required, verify chrome.command and screenshot.temp.imagedir in $UserHome\\solrwayback.properties"
     Write-Log "Users may need to sign out/in before proceeding."
 
     if (Test-Path $TempDir) {
