@@ -1,6 +1,7 @@
 name: Test SolrWayback Installation
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths: [ 'install_solrwayback.ps1' ]
