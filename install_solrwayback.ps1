@@ -108,7 +108,9 @@ try {
         Write-Log "Java 11 already present  at $JavaHome"
     }
 
+    ##########################################
     # Install SolrWayback
+    ##########################################
     Write-Log "---- Starting SolrWayback installation"
 
     $SolrwaybackVersion = Get-EnvVar `
@@ -156,8 +158,8 @@ try {
         -Force
 
     $FilesToCopy = @(
-    "solrwayback.properties",
-    "solrwaybackweb.properties"
+        "solrwayback.properties",
+        "solrwaybackweb.properties"
     )
 
     $PackageLocation = Join-Path $SolrWaybackInstallDir $VersionedPackageName
@@ -174,7 +176,9 @@ try {
     }
     Write-Log "SolrWayback $SolrWaybackVersion installed to $SolrWaybackInstallDir"
 
+    ##########################################
     # Install Tomcat 9
+    ##########################################
     Write-Log "---- Starting Apache Tomcat installation"
 
     $TomcatVersion = Get-EnvVar `
@@ -184,10 +188,11 @@ try {
         -Name "TOMCAT_INSTALL_DIR" `
         -Default (Join-Path $InstallDir "tomcat9")
     $TomcatArchiveName = "apache-tomcat-$TomcatVersion.zip"
-    $TomcatArchiveUrl = "https://dlcdn.apache.org/tomcat/tomcat-9/v$TomcatVersion/bin/$TomcatArchiveName"
+    $TomcatArchiveUrl = "https://archive.apache.org/dist/tomcat/tomcat-9/v$TomcatVersion/bin/$TomcatArchiveName"
     $TomcatZipPath = Join-Path $TempDir $TomcatArchiveName
 
     Write-Log "Install Apache Tomcat (version: $TomcatVersion)"
+    Write-Log "Download URL: $TomcatArchiveUrl"
     Invoke-WebRequest -Uri $TomcatArchiveUrl -OutFile $TomcatZipPath
 
     if (!(Test-Path $TomcatZipPath)) {
@@ -210,7 +215,9 @@ try {
 
     Write-Log "Tomcat 9 installed to $TomcatInstallDir"
 
+    ##########################################
     # Install Solr 9
+    ##########################################
     Write-Log "---- Starting Apache Solr installation"
     $SolrVersion = Get-EnvVar `
         -Name "SOLR_VERSION" `
@@ -223,6 +230,7 @@ try {
     $SolrZipPath = Join-Path $TempDir $SolrArchiveName
 
     Write-Log "Install Apache Solr (version: $SolrVersion)"
+    Write-Log "Download URL: $SolrArchiveUrl"
     Invoke-WebRequest -Uri $SolrArchiveUrl -OutFile $SolrZipPath
 
     if (!(Test-Path $SolrZipPath)) {
@@ -242,12 +250,15 @@ try {
     }
     Write-Log "Solr $SolrVersion installed to $SolrInstallDir"
 
+    ##########################################
     # Install Google Chrome
+    ##########################################
     Write-Log "---- Starting Google Chrome installation"
     $ChromeInstallerUrl = "https://dl.google.com/chrome/install/googlechromestandaloneenterprise64.msi"
     $ChromeInstallDir = Join-Path $TempDir "GoogleChrome"
 
     Write-Log "Downloading Google Chrome from $ChromeInstallerUrl"
+    Write-Log "Download URL: $ChromeInstallerUrl"
     Invoke-WebRequest -Uri $ChromeInstallerUrl -OutFile $ChromeInstallDir
 
     if (!(Test-Path $ChromeInstallDir)) {
@@ -269,6 +280,10 @@ try {
     }
 
 }
+
+##########################################
+# Error handling
+##########################################
 catch {
     Write-Log "ERROR: $($_.Exception.Message)"
     throw
