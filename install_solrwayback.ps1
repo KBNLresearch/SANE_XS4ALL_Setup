@@ -156,8 +156,8 @@ try {
         -Force
 
     $FilesToCopy = @(
-    "solrwayback.properties",
-    "solrwaybackweb.properties"
+        "solrwayback.properties",
+        "solrwaybackweb.properties"
     )
 
     $PackageLocation = Join-Path $SolrWaybackInstallDir $VersionedPackageName
@@ -188,6 +188,7 @@ try {
     $TomcatZipPath = Join-Path $TempDir $TomcatArchiveName
 
     Write-Log "Install Apache Tomcat (version: $TomcatVersion)"
+    Write-Log "Download URL: $TomcatArchiveUrl"
     Invoke-WebRequest -Uri $TomcatArchiveUrl -OutFile $TomcatZipPath
 
     if (!(Test-Path $TomcatZipPath)) {
@@ -223,6 +224,7 @@ try {
     $SolrZipPath = Join-Path $TempDir $SolrArchiveName
 
     Write-Log "Install Apache Solr (version: $SolrVersion)"
+    Write-Log "Download URL: $SolrArchiveUrl"
     Invoke-WebRequest -Uri $SolrArchiveUrl -OutFile $SolrZipPath
 
     if (!(Test-Path $SolrZipPath)) {
@@ -248,6 +250,7 @@ try {
     $ChromeInstallDir = Join-Path $TempDir "GoogleChrome"
 
     Write-Log "Downloading Google Chrome from $ChromeInstallerUrl"
+    Write-Log "Download URL: $ChromeInstallerUrl"
     Invoke-WebRequest -Uri $ChromeInstallerUrl -OutFile $ChromeInstallDir
 
     if (!(Test-Path $ChromeInstallDir)) {
