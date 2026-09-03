@@ -108,7 +108,9 @@ try {
         Write-Log "Java 11 already present  at $JavaHome"
     }
 
+    ##########################################
     # Install SolrWayback
+    ##########################################
     Write-Log "---- Starting SolrWayback installation"
 
     $SolrwaybackVersion = Get-EnvVar `
@@ -174,7 +176,9 @@ try {
     }
     Write-Log "SolrWayback $SolrWaybackVersion installed to $SolrWaybackInstallDir"
 
+    ##########################################
     # Install Tomcat 9
+    ##########################################
     Write-Log "---- Starting Apache Tomcat installation"
 
     $TomcatVersion = Get-EnvVar `
@@ -184,7 +188,7 @@ try {
         -Name "TOMCAT_INSTALL_DIR" `
         -Default (Join-Path $InstallDir "tomcat9")
     $TomcatArchiveName = "apache-tomcat-$TomcatVersion.zip"
-    $TomcatArchiveUrl = "https://dlcdn.apache.org/tomcat/tomcat-9/v$TomcatVersion/bin/$TomcatArchiveName"
+    $TomcatArchiveUrl = "https://archive.apache.org/dist/tomcat/tomcat-9/v$TomcatVersion/bin/$TomcatArchiveName"
     $TomcatZipPath = Join-Path $TempDir $TomcatArchiveName
 
     Write-Log "Install Apache Tomcat (version: $TomcatVersion)"
@@ -211,7 +215,9 @@ try {
 
     Write-Log "Tomcat 9 installed to $TomcatInstallDir"
 
+    ##########################################
     # Install Solr 9
+    ##########################################
     Write-Log "---- Starting Apache Solr installation"
     $SolrVersion = Get-EnvVar `
         -Name "SOLR_VERSION" `
@@ -244,7 +250,9 @@ try {
     }
     Write-Log "Solr $SolrVersion installed to $SolrInstallDir"
 
+    ##########################################
     # Install Google Chrome
+    ##########################################
     Write-Log "---- Starting Google Chrome installation"
     $ChromeInstallerUrl = "https://dl.google.com/chrome/install/googlechromestandaloneenterprise64.msi"
     $ChromeInstallDir = Join-Path $TempDir "GoogleChrome"
@@ -272,6 +280,10 @@ try {
     }
 
 }
+
+##########################################
+# Error handling
+##########################################
 catch {
     Write-Log "ERROR: $($_.Exception.Message)"
     throw
