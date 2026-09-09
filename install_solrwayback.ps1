@@ -88,6 +88,10 @@ try {
         -Name "JAVA_HOME" `
         -Default (Join-Path $InstallDir "Java\\jdk-11")
 
+    [Environment]::SetEnvironmentVariable("JAVA_HOME", $JavaHome, "Machine")
+    $env:JAVA_HOME = $JavaHome
+    Write-Log "Configured machine-wide JAVA_HOME as $JavaHome"
+
     if (!(Test-Path $JavaHome)) {
         $msi = Join-Path $env:TEMP "temurin11.msi"
         $javaInstallerUrl = "https://aka.ms/download-jdk/microsoft-jdk-11-windows-x64.msi"
